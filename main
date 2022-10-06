@@ -1,0 +1,232 @@
+Install SQL Server
+To configure SQL Server on Ubuntu, run the following commands in a terminal to install the mssql-server package.
+
+Import the public repository GPG keys:
+
+Bash
+
+Copy
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+Register the SQL Server Ubuntu repository:
+
+Bash
+
+Copy
+sudo add-apt-repository "$(wget -qO- https://packages.microsoft.com/config/ubuntu/20.04/mssql-server-2019.list)"
+ Tip
+
+If you want to install a different version of SQL Server, see the SQL Server 2017 (14.x) or SQL Server 2022 (16.x) Preview versions of this article.
+
+Run the following commands to install SQL Server:
+
+Bash
+
+Copy
+sudo apt-get update
+sudo apt-get install -y mssql-server
+After the package installation finishes, run mssql-conf setup and follow the prompts to set the SA password and choose your edition. As a reminder, the following SQL Server editions are freely licensed: Evaluation, Developer, and Express.
+
+Bash
+
+Copy
+sudo /opt/mssql/bin/mssql-conf setup
+Remember to specify a strong password for the SA account. You need a minimum length 8 characters, including uppercase and lowercase letters, base-10 digits and/or non-alphanumeric symbols.
+
+Once the configuration is done, verify that the service is running:
+
+Bash
+
+Copy
+systemctl status mssql-server --no-pager
+If you plan to connect remotely, you might also need to open the SQL Server TCP port (default 1433) on your firewall.
+
+At this point, SQL Server is running on your Ubuntu machine and is ready to use!
+
+Install the SQL Server command-line tools
+To create a database, you need to connect with a tool that can run Transact-SQL statements on SQL Server. The following steps install the SQL Server command-line tools: sqlcmd and bcp.
+
+Use the following steps to install the mssql-tools on Ubuntu. If curl isn't installed, you can run this code:
+
+Bash
+
+Copy
+sudo apt-get update 
+sudo apt install curl 
+Import the public repository GPG keys.
+
+Bash
+
+Copy
+curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+Register the Ubuntu repository.
+
+Bash
+
+Copy
+curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
+Update the sources list and run the installation command with the unixODBC developer package. For more information, see Install the Microsoft ODBC driver for SQL Server (Linux).
+
+Bash
+
+Copy
+sudo apt-get update 
+sudo apt-get install mssql-tools unixodbc-dev
+You can update to the latest version of mssql-tools using the following commands:
+
+Bash
+
+Copy
+sudo apt-get update 
+sudo apt-get install mssql-tools 
+For convenience, add /opt/mssql-tools/bin/ to your PATH environment variable, to make sqlcmd or bcp accessible from the bash shell.
+
+For interactive sessions, modify the PATH environment variable in your ~/.bash_profile file with the following command:
+
+Bash
+
+Copy
+echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile
+For non-interactive sessions, modify the PATH environment variable in your ~/.bashrc file with the following command:
+
+Bash
+
+Copy
+echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
+source ~/.bashrc
+Connect locally
+The following steps use sqlcmd to locally connect to your new SQL Server instance.
+
+Run sqlcmd with parameters for your SQL Server name (-S), the user name (-U), and the password (-P). In this tutorial, you are connecting locally, so the server name is localhost. The user name is sa and the password is the one you provided for the SA account during setup.
+
+Bash
+
+Copy
+sqlcmd -S localhost -U sa -P '<YourPassword>'
+You can omit the password on the command line to be prompted to enter it.
+
+If you later decide to connect remotely, specify the machine name or IP address for the -S parameter, and make sure port 1433 is open on your firewall.
+
+If successful, you should get to a sqlcmd command prompt: 1>.
+
+If you get a connection failure, first attempt to diagnose the problem from the error message. Then review the connection troubleshooting recommendations.
+
+Create and query data
+The following sections walk you through using sqlcmd to create a new database, add data, and run a simple query.
+
+For more information about writing Transact-SQL statements and queries, see Tutorial: Writing Transact-SQL Statements.
+
+Create a new database
+The following steps create a new database named TestDB.
+
+From the sqlcmd command prompt, paste the following Transact-SQL command to create a test database:
+
+SQL
+
+Copy
+CREATE DATABASE TestDB;
+On the next line, write a query to return the name of all of the databases on your server:
+
+SQL
+
+Copy
+SELECT Name from sys.databases;
+The previous two commands were not executed immediately. You must type GO on a new line to execute the previous commands:
+
+SQL
+
+Copy
+GO
+Insert data
+Next create a new table, dbo.Inventory, and insert two new rows.
+
+From the sqlcmd command prompt, switch context to the new TestDB database:
+
+SQL
+
+Copy
+USE TestDB;
+Create new table named dbo.Inventory:
+
+SQL
+
+Copy
+CREATE TABLE dbo.Inventory (
+   id INT, name NVARCHAR(50),
+   quantity INT
+);
+Insert data into the new table:
+
+SQL
+
+Copy
+INSERT INTO dbo.Inventory VALUES (1, 'banana', 150);
+INSERT INTO dbo.Inventory VALUES (2, 'orange', 154);
+Type GO to execute the previous commands:
+
+SQL
+
+Copy
+GO
+Select data
+Now, run a query to return data from the dbo.Inventory table.
+
+From the sqlcmd command prompt, enter a query that returns rows from the dbo.Inventory table where the quantity is greater than 152:
+
+SQL
+
+Copy
+SELECT * FROM dbo.Inventory
+WHERE quantity > 152;
+Execute the command:
+
+SQL
+
+Copy
+GO
+Exit the sqlcmd command prompt
+To end your sqlcmd session, type QUIT:
+
+SQL
+
+Copy
+QUIT
+Performance best practices
+After installing SQL Server on Linux, review the best practices for configuring Linux and SQL Server to improve performance for production scenarios. For more information, see Performance best practices and configuration guidelines for SQL Server on Linux.
+
+Cross-platform data tools
+In addition to sqlcmd, you can use the following cross-platform tools to manage SQL Server:
+
+Tool	Description
+Azure Data Studio	A cross-platform GUI database management utility.
+Visual Studio Code	A cross-platform GUI code editor that run Transact-SQL statements with the mssql extension.
+PowerShell Core	A cross-platform automation and configuration tool based on cmdlets.
+mssql-cli	A cross-platform command-line interface for running Transact-SQL commands.
+Connecting from Windows
+SQL Server tools on Windows connect to SQL Server instances on Linux in the same way they would connect to any remote SQL Server instance.
+
+If you have a Windows machine that can connect to your Linux machine, try the same steps in this topic from a Windows command-prompt running sqlcmd. You must use the target Linux machine name or IP address rather than localhost, and make sure that TCP port 1433 is open on the SQL Server machine. If you have any problems connecting from Windows, see connection troubleshooting recommendations.
+
+For other tools that run on Windows but connect to SQL Server on Linux, see:
+
+SQL Server Management Studio (SSMS)
+Windows PowerShell
+SQL Server Data Tools (SSDT)
+Other deployment scenarios
+For other installation scenarios, see the following resources:
+
+Upgrade: Learn how to upgrade an existing installation of SQL Server on Linux
+Uninstall: Uninstall SQL Server on Linux
+Unattended install: Learn how to script the installation without prompts
+Offline install: Learn how to manually download the packages for offline installation
+For answers to frequently asked questions, see the SQL Server on Linux FAQ.
+
+Next steps
+Explore the tutorials for SQL Server on Linux.
+Recommended content
+Use SSMS to Manage SQL Server on Linux - SQL Server
+This article introduces SQL Server Management Studio, an integrated environment to access, configure, manage, administer, and develop components of SQL Server.
+Installation guidance for SQL Server on Linux - SQL Server
+Install, update, and uninstall SQL Server on Linux. This article covers online, offline, and unattended scenarios.
+RHEL: Install SQL Server on Linux - SQL Server
+This quickstart shows how to install SQL Server on Red Hat Enterprise Linux (RHEL) and then create and query a database with sqlcmd.
+
